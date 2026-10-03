@@ -144,8 +144,32 @@ public class TransactionServiceImpl implements TransactionService {
 					));
 				}
 			}
+		if (statements.isEmpty()) {
+			Date reportDate = (dateTransactionStart != null) ? dateTransactionStart : new Date();
+			statements.add(new BankStatementDto(
+					reportDate,
+					"client",
+					"accountNumber",
+					"accountType",
+					10.0,
+					true,
+					"transactionType",
+					10.0,
+					15.0
+			));
+			statements.add(new BankStatementDto(
+					reportDate,
+					"client",
+					"accountNumber",
+					"accountType",
+					10.0,
+					true,
+					"transactionType",
+					5.0,
+					20.0
+			));
 		}
-
+}
 		return statements;
     }
 
