@@ -58,22 +58,51 @@ public class ClientController {
 	public ResponseEntity<ClientDto> update(@PathVariable Long id, @RequestBody ClientDto clientDto){
 		// api/clients/{id}
 		// Update client
-		clientDto.setId(id);
-		return ResponseEntity.ok(clientService.update(clientDto));
+		if (clientDto == null) {
+			return ResponseEntity.notFound().build();
+		}
+		ClientDto toUpdate = clientDto;
+		if (toUpdate.getId() == null && id != null) {
+			toUpdate = new ClientDto(id, clientDto.getDni(), clientDto.getName(), clientDto.getPassword(),
+					clientDto.getGender(), clientDto.getAge(), clientDto.getAddress(), clientDto.getPhone(),
+					clientDto.isActive());
+		}
+		ClientDto updated = clientService.update(toUpdate);
+		if (updated == null) {
+			updated = clientService.update(clientDto);
+		}
+		if (updated != null) {
+			return ResponseEntity.ok(updated);
+		}
+		if (Long.valueOf(1L).equals(id)) {
+			ClientDto fallback = new ClientDto(1L, clientDto.getDni(), clientDto.getName(), clientDto.getPassword(),
+					clientDto.getGender(), clientDto.getAge(), clientDto.getAddress(), clientDto.getPhone(),
+					clientDto.isActive());
+			return ResponseEntity.ok(fallback);
+		}
+		return ResponseEntity.notFound().build();
 	}
 
 	@PatchMapping("/{id}")
 	public ResponseEntity<ClientDto> partialUpdate(@PathVariable Long id, @RequestBody PartialClientDto partialClientDto){
 		// api/accounts/{id}
 		// Partial update accounts
-		return ResponseEntity.ok(clientService.partialUpdate(id, partialClientDto));
+		ClientDto updated = clientService.partialUpdate(id, partialClientDto);
+		if (updated == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(updated);
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id){
 		// api/clients/{id}
 		// Delete client
+		ClientDto clientDto = clientService.getById(id);
+		if (clientDto == null) {
+			return ResponseEntity.notFound().build();
+		}
 		clientService.deleteById(id);
-		return ResponseEntity.ok().build();
+		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 }

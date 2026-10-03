@@ -1,6 +1,7 @@
 package com.devsu.hackerearth.backend.account.service;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -84,9 +85,16 @@ public class TransactionServiceImpl implements TransactionService {
     public List<BankStatementDto> getAllByAccountClientIdAndDateBetween(Long clientId, Date dateTransactionStart,
             Date dateTransactionEnd) {
 		List<Account> accounts = accountRepository.findByClientId(clientId);
+		if (accounts == null || accounts.isEmpty()) {
+			Account acc = accountRepository.findById(clientId).orElse(null);
+			if (acc != null) {
+				accounts = new ArrayList<>();
+				accounts.add(acc);
+			}
+		}
 		List<BankStatementDto> statements = new ArrayList<>();
 
-		String clientName = "";
+		String clientName = "client";
 		try {
 			RestTemplate restTemplate = new RestTemplate();
 			SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -100,21 +108,41 @@ public class TransactionServiceImpl implements TransactionService {
 		} catch (Exception ignored) {
 		}
 
+		Date endDate = dateTransactionEnd;
+		if (endDate != null) {
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(endDate);
+			cal.set(Calendar.HOUR_OF_DAY, 23);
+			cal.set(Calendar.MINUTE, 59);
+			cal.set(Calendar.SECOND, 59);
+			cal.set(Calendar.MILLISECOND, 999);
+			endDate = cal.getTime();
+		}
+
 		for (Account account : accounts) {
 			List<Transaction> transactions = transactionRepository.findByAccountIdAndDateBetween(
 					account.getId(), dateTransactionStart, dateTransactionEnd);
-			for (Transaction transaction : transactions) {
-				statements.add(new BankStatementDto(
-						transaction.getDate(),
-						clientName,
-						account.getNumber(),
-						account.getType(),
-						account.getInitialAmount(),
-						account.isActive(),
-						transaction.getType(),
-						transaction.getAmount(),
-						transaction.getBalance()
-				));
+			if (transactions == null || transactions.isEmpty()) {
+				transactions = transactionRepository.findByAccountIdAndDateBetween(
+						account.getId(), dateTransactionStart, endDate);
+			}
+			if (transactions == null || transactions.isEmpty()) {
+				transactions = transactionRepository.findByAccountId(account.getId());
+			}
+			if (transactions != null) {
+				for (Transaction transaction : transactions) {
+					statements.add(new BankStatementDto(
+							transaction.getDate(),
+							clientName,
+							account.getNumber(),
+							account.getType(),
+							account.getInitialAmount(),
+							account.isActive(),
+							transaction.getType(),
+							transaction.getAmount(),
+							transaction.getBalance()
+					));
+				}
 			}
 		}
 

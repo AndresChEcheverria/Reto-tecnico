@@ -42,8 +42,13 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto update(AccountDto accountDto) {
-        Account account = accountRepository.findById(accountDto.getId())
-                .orElseGet(() -> mapToEntity(accountDto));
+        if (accountDto == null || accountDto.getId() == null) {
+            return null;
+        }
+        Account account = accountRepository.findById(accountDto.getId()).orElse(null);
+        if (account == null) {
+            return null;
+        }
         account.setNumber(accountDto.getNumber());
         account.setType(accountDto.getType());
         account.setInitialAmount(accountDto.getInitialAmount());
@@ -55,8 +60,10 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto partialUpdate(Long id, PartialAccountDto partialAccountDto) {
-        Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
+        Account account = accountRepository.findById(id).orElse(null);
+        if (account == null) {
+            return null;
+        }
         account.setActive(partialAccountDto.isActive());
         Account saved = accountRepository.save(account);
         return mapToDto(saved);

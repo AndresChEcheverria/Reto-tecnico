@@ -42,8 +42,13 @@ public class ClientServiceImpl implements ClientService {
 
 	@Override
 	public ClientDto update(ClientDto clientDto) {
-		Client client = clientRepository.findById(clientDto.getId())
-				.orElseGet(() -> mapToEntity(clientDto));
+		if (clientDto == null || clientDto.getId() == null) {
+			return null;
+		}
+		Client client = clientRepository.findById(clientDto.getId()).orElse(null);
+		if (client == null) {
+			return null;
+		}
 		client.setName(clientDto.getName());
 		client.setDni(clientDto.getDni());
 		client.setPassword(clientDto.getPassword());
@@ -58,8 +63,10 @@ public class ClientServiceImpl implements ClientService {
 
 	@Override
 	public ClientDto partialUpdate(Long id, PartialClientDto partialClientDto) {
-		Client client = clientRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Client not found with id: " + id));
+		Client client = clientRepository.findById(id).orElse(null);
+		if (client == null) {
+			return null;
+		}
 		client.setActive(partialClientDto.isActive());
 		Client saved = clientRepository.save(client);
 		return mapToDto(saved);
